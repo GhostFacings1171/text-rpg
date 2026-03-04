@@ -1,0 +1,462 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Infinite Dungeon RPG</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700&family=Inter:wght@300;400;600&display=swap');
+        
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #0a0a0f;
+            color: #e2e8f0;
+        }
+        
+        .fantasy-font {
+            font-family: 'Cinzel', serif;
+        }
+        
+        .text-shadow {
+            text-shadow: 0 0 10px rgba(147, 51, 234, 0.5);
+        }
+        
+        .glow-text {
+            text-shadow: 0 0 20px rgba(168, 85, 247, 0.6);
+        }
+        
+        .terminal-text {
+            font-family: 'Courier New', monospace;
+        }
+        
+        .stat-bar-fill {
+            transition: width 0.5s ease-in-out, background-color 0.3s;
+        }
+        
+        .message-appear {
+            animation: fadeIn 0.3s ease-in;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(5px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        .shake {
+            animation: shake 0.5s;
+        }
+        
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-5px); }
+            75% { transform: translateX(5px); }
+        }
+        
+        .pulse-glow {
+            animation: pulseGlow 2s infinite;
+        }
+        
+        @keyframes pulseGlow {
+            0%, 100% { box-shadow: 0 0 5px rgba(168, 85, 247, 0.5); }
+            50% { box-shadow: 0 0 20px rgba(168, 85, 247, 0.8); }
+        }
+        
+        .scrollable-area::-webkit-scrollbar {
+            width: 8px;
+        }
+        
+        .scrollable-area::-webkit-scrollbar-track {
+            background: #1e293b;
+        }
+        
+        .scrollable-area::-webkit-scrollbar-thumb {
+            background: #7c3aed;
+            border-radius: 4px;
+        }
+        
+        .btn-hover:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(147, 51, 234, 0.4);
+        }
+        
+        .damage-text {
+            color: #ef4444;
+            font-weight: bold;
+        }
+        
+        .heal-text {
+            color: #22c55e;
+            font-weight: bold;
+        }
+        
+        .magic-text {
+            color: #a855f7;
+            font-weight: bold;
+        }
+        
+        .gold-text {
+            color: #eab308;
+            font-weight: bold;
+        }
+
+        .weakness-indicator {
+            animation: weaknessFlash 0.6s;
+        }
+
+        @keyframes weaknessFlash {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.6; }
+        }
+    </style>
+</head>
+<body class="h-screen overflow-hidden bg-gradient-to-b from-gray-900 to-black">
+
+    <!-- Header Stats Bar -->
+    <header class="bg-gray-900 border-b border-purple-900/50 p-4 shadow-lg z-10 relative">
+        <div class="max-w-6xl mx-auto grid grid-cols-2 md:grid-cols-4 gap-4 items-center">
+            <!-- HP Bar -->
+            <div class="space-y-1">
+                <div class="flex justify-between text-sm">
+                    <span class="text-red-400 font-semibold flex items-center gap-1">
+                        <i data-lucide="heart" class="w-4 h-4"></i> HP
+                    </span>
+                    <span class="text-gray-300 text-xs" id="hp-text">100/100</span>
+                </div>
+                <div class="h-3 bg-gray-800 rounded-full overflow-hidden border border-red-900/30">
+                    <div id="hp-bar" class="stat-bar-fill h-full bg-gradient-to-r from-red-600 to-red-500" style="width: 100%"></div>
+                </div>
+            </div>
+
+            <!-- MP Bar -->
+            <div class="space-y-1">
+                <div class="flex justify-between text-sm">
+                    <span class="text-blue-400 font-semibold flex items-center gap-1">
+                        <i data-lucide="sparkles" class="w-4 h-4"></i> MP
+                    </span>
+                    <span class="text-gray-300 text-xs" id="mp-text">50/50</span>
+                </div>
+                <div class="h-3 bg-gray-800 rounded-full overflow-hidden border border-blue-900/30">
+                    <div id="mp-bar" class="stat-bar-fill h-full bg-gradient-to-r from-blue-600 to-blue-500" style="width: 100%"></div>
+                </div>
+            </div>
+
+            <!-- Level & XP -->
+            <div class="flex items-center gap-3">
+                <div class="bg-purple-900/30 p-2 rounded-lg border border-purple-500/30">
+                    <div class="text-xs text-purple-400 uppercase tracking-wider">Level</div>
+                    <div class="text-2xl font-bold text-purple-300 fantasy-font" id="level-display">1</div>
+                </div>
+                <div class="flex-1">
+                    <div class="text-xs text-gray-400 mb-1">XP: <span id="xp-text">0/100</span></div>
+                    <div class="h-2 bg-gray-800 rounded-full overflow-hidden">
+                        <div id="xp-bar" class="stat-bar-fill h-full bg-purple-500" style="width: 0%"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Gold & Depth -->
+            <div class="flex items-center justify-end gap-4">
+                <div class="text-right">
+                    <div class="flex items-center gap-1 text-yellow-400">
+                        <i data-lucide="coins" class="w-4 h-4"></i>
+                        <span class="font-bold" id="gold-display">0</span>
+                    </div>
+                    <div class="text-xs text-gray-500">Gold</div>
+                </div>
+                <div class="text-right border-l border-gray-700 pl-4">
+                    <div class="flex items-center gap-1 text-orange-400">
+                        <i data-lucide="layers" class="w-4 h-4"></i>
+                        <span class="font-bold" id="depth-display">1</span>
+                    </div>
+                    <div class="text-xs text-gray-500">Depth</div>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Game Area -->
+    <main class="max-w-6xl mx-auto p-2 md:p-4 h-[calc(100vh-140px)] grid grid-cols-1 lg:grid-cols-3 gap-2 md:gap-4 overflow-hidden">
+        
+        <!-- Game Log (Center/Left) -->
+        <div class="lg:col-span-2 bg-gray-900/50 border border-gray-800 rounded-lg md:rounded-xl flex flex-col overflow-hidden shadow-2xl backdrop-blur-sm">
+            <div class="bg-gray-800/50 p-2 md:p-3 border-b border-gray-700 flex justify-between items-center flex-wrap gap-1">
+                <h2 class="text-purple-300 font-semibold fantasy-font flex items-center gap-1 md:gap-2 text-sm md:text-base">
+                    <i data-lucide="scroll" class="w-4 h-4 md:w-5 md:h-5"></i>
+                    Adventure Log
+                </h2>
+                <button onclick="game.toggleAutoScroll()" class="text-xs text-gray-400 hover:text-white transition-colors" id="autoscroll-btn">
+                    Auto-scroll: ON
+                </button>
+            </div>
+            <div id="game-log" class="flex-1 overflow-y-auto p-2 md:p-4 space-y-2 md:space-y-3 scrollable-area text-xs md:text-sm leading-relaxed">
+                <!-- Messages will appear here -->
+            </div>
+        </div>
+
+        <!-- Sidebar (Stats & Controls) -->
+        <div class="space-y-2 md:space-y-4 flex flex-col">
+            
+            <!-- Enemy Info (Combat) -->
+            <div id="enemy-panel" class="hidden bg-red-950/30 border border-red-900/50 rounded-lg md:rounded-xl p-2 md:p-3 shadow-lg">
+                <h3 class="text-red-300 font-semibold mb-1 md:mb-2 fantasy-font flex items-center gap-1 md:gap-2 text-xs md:text-sm">
+                    <i data-lucide="skull" class="w-3 h-3 md:w-4 md:h-4 text-red-400"></i>
+                    Current Enemy
+                </h3>
+                <div class="space-y-2">
+                    <div class="text-red-200 font-bold text-lg leading-tight" id="enemy-name">-</div>
+                    <div class="space-y-1">
+                        <div class="flex justify-between text-xs">
+                            <span class="text-red-400">HP</span>
+                            <span class="text-gray-300" id="enemy-hp-text">0/0</span>
+                        </div>
+                        <div class="h-2 bg-gray-800 rounded-full overflow-hidden border border-red-900/30">
+                            <div id="enemy-hp-bar" class="stat-bar-fill h-full bg-gradient-to-r from-red-700 to-red-500" style="width: 100%"></div>
+                        </div>
+                    </div>
+                    <div class="grid grid-cols-3 gap-1 text-xs text-center pt-1">
+                        <div class="bg-gray-800/50 rounded p-1">
+                            <div class="text-orange-400 font-bold" id="enemy-atk">0</div>
+                            <div class="text-gray-500 text-[10px]">ATK</div>
+                        </div>
+                        <div class="bg-gray-800/50 rounded p-1">
+                            <div class="text-blue-400 font-bold" id="enemy-def">0</div>
+                            <div class="text-gray-500 text-[10px]">DEF</div>
+                        </div>
+                        <div class="bg-gray-800/50 rounded p-1">
+                            <div class="text-purple-400 font-bold" id="enemy-mag">0</div>
+                            <div class="text-gray-500 text-[10px]">MAG</div>
+                        </div>
+                    </div>
+                    <!-- Weaknesses & Resistances -->
+                    <div id="enemy-weaknesses" class="mt-3 pt-2 border-t border-red-900/30 text-xs">
+                        <!-- Dynamically populated -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- Detailed Stats -->
+            <div class="bg-gray-900/50 border border-gray-800 rounded-lg md:rounded-xl p-2 md:p-3 shadow-lg">
+                <h3 class="text-gray-300 font-semibold mb-1 md:mb-2 fantasy-font flex items-center gap-1 md:gap-2 text-xs md:text-sm">
+                    <i data-lucide="user" class="w-3 h-3 md:w-4 md:h-4 text-purple-400"></i>
+                    Character Stats
+                </h3>
+                <div class="space-y-1 text-xs">
+                    <div class="flex justify-between items-center p-1.5 bg-gray-800/30 rounded">
+                        <span class="text-gray-400">Attack</span>
+                        <span class="text-orange-400 font-bold" id="stat-attack">10</span>
+                    </div>
+                    <div class="flex justify-between items-center p-1.5 bg-gray-800/30 rounded">
+                        <span class="text-gray-400">Defense</span>
+                        <span class="text-blue-400 font-bold" id="stat-defense">5</span>
+                    </div>
+                    <div class="flex justify-between items-center p-1.5 bg-gray-800/30 rounded">
+                        <span class="text-gray-400">Magic</span>
+                        <span class="text-purple-400 font-bold" id="stat-magic">8</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Action Buttons -->
+            <div class="bg-gray-900/50 border border-gray-800 rounded-lg md:rounded-xl p-2 md:p-4 shadow-lg flex-1">
+                <h3 class="text-gray-300 font-semibold mb-2 md:mb-3 fantasy-font flex items-center gap-1 md:gap-2 text-xs md:text-sm">
+                    <i data-lucide="swords" class="w-3 h-3 md:w-4 md:h-4 text-red-400"></i>
+                    Actions
+                </h3>
+                <div id="action-buttons" class="grid grid-cols-2 gap-1 md:gap-2">
+                    <!-- Dynamic buttons will be inserted here -->
+                </div>
+            </div>
+
+            <!-- Premium Shop Button -->
+            <button onclick="game.openPremiumShop()" class="bg-gradient-to-r from-purple-600 to-purple-700 hover:from-purple-500 hover:to-purple-600 text-white py-2 md:py-3 px-3 md:px-4 rounded-lg md:rounded-xl transition-all font-bold text-xs md:text-sm shadow-lg flex items-center justify-center gap-1 md:gap-2">
+                <i data-lucide="gem" class="w-3 h-3 md:w-4 md:h-4"></i>
+                Premium Shop
+            </button>
+
+            <!-- Quick Stats -->
+            <div class="bg-gray-900/50 border border-gray-800 rounded-lg md:rounded-xl p-2 md:p-4 shadow-lg">
+                <div class="grid grid-cols-2 gap-2 md:gap-3 text-center text-xs">
+                    <div class="bg-gray-800/30 p-1 md:p-2 rounded">
+                        <div class="text-gray-500 mb-1 text-xs">Rooms</div>
+                        <div class="text-white font-bold text-base md:text-lg" id="rooms-cleared">0</div>
+                    </div>
+                    <div class="bg-gray-800/30 p-1 md:p-2 rounded">
+                        <div class="text-gray-500 mb-1 text-xs">Kills</div>
+                        <div class="text-white font-bold text-base md:text-lg" id="enemies-killed">0</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Shop Modal -->
+    <div id="shop-modal" class="hidden fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+        <div class="bg-gray-900 border border-yellow-600/50 rounded-2xl max-w-md w-full p-4 md:p-6 shadow-2xl transform scale-100 transition-transform max-h-[90vh] overflow-y-auto">
+            <div class="flex justify-between items-start mb-3 md:mb-4">
+                <div>
+                    <h2 class="text-lg md:text-2xl font-bold text-yellow-400 fantasy-font" id="shop-title">Merchant's Shop</h2>
+                    <p class="text-gray-400 text-xs md:text-sm mt-1" id="shop-desc">Spend your gold wisely...</p>
+                </div>
+                <button onclick="game.closeShop()" class="text-gray-500 hover:text-white flex-shrink-0">
+                    <i data-lucide="x" class="w-5 h-5 md:w-6 md:h-6"></i>
+                </button>
+            </div>
+            
+            <div class="bg-gray-800/50 rounded-lg p-2 md:p-3 mb-3 md:mb-4 flex justify-between items-center">
+                <span class="text-gray-400 text-xs md:text-sm">Your Gold:</span>
+                <span class="text-yellow-400 font-bold text-base md:text-xl flex items-center gap-1">
+                    <i data-lucide="coins" class="w-4 h-4 md:w-5 md:h-5"></i>
+                    <span id="shop-gold">0</span>
+                </span>
+            </div>
+
+            <div class="space-y-2 md:space-y-3" id="shop-items">
+                <!-- Shop items generated dynamically -->
+            </div>
+
+            <button onclick="game.leaveShop()" class="w-full mt-3 md:mt-4 bg-gray-700 hover:bg-gray-600 text-white py-2 md:py-3 rounded-lg transition-colors font-semibold text-sm md:text-base">
+                Leave Shop
+            </button>
+        </div>
+    </div>
+
+    <!-- Level Up Modal -->
+    <div id="levelup-modal" class="hidden fixed inset-0 bg-purple-900/20 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+        <div class="bg-gray-900 border border-purple-500/50 rounded-2xl max-w-md w-full p-6 shadow-2xl pulse-glow">
+            <div class="text-center mb-6">
+                <div class="inline-block p-3 bg-purple-900/50 rounded-full mb-3">
+                    <i data-lucide="trending-up" class="w-8 h-8 text-purple-400"></i>
+                </div>
+                <h2 class="text-3xl font-bold text-purple-300 fantasy-font glow-text">Level Up!</h2>
+                <p class="text-gray-400 mt-2">You are now level <span id="new-level" class="text-white font-bold"></span></p>
+            </div>
+
+            <div class="space-y-2 text-sm mb-6">
+                <div class="flex justify-between p-2 bg-gray-800/30 rounded">
+                    <span class="text-red-400">Max HP</span>
+                    <span class="text-gray-300">+2 <span class="text-green-400 text-xs" id="bonus-hp"></span></span>
+                </div>
+                <div class="flex justify-between p-2 bg-gray-800/30 rounded">
+                    <span class="text-blue-400">Max MP</span>
+                    <span class="text-gray-300">+2 <span class="text-green-400 text-xs" id="bonus-mp"></span></span>
+                </div>
+                <div class="flex justify-between p-2 bg-gray-800/30 rounded">
+                    <span class="text-orange-400">Attack</span>
+                    <span class="text-gray-300">+2 <span class="text-green-400 text-xs" id="bonus-atk"></span></span>
+                </div>
+                <div class="flex justify-between p-2 bg-gray-800/30 rounded">
+                    <span class="text-cyan-400">Defense</span>
+                    <span class="text-gray-300">+2 <span class="text-green-400 text-xs" id="bonus-def"></span></span>
+                </div>
+                <div class="flex justify-between p-2 bg-gray-800/30 rounded">
+                    <span class="text-purple-400">Magic</span>
+                    <span class="text-gray-300">+2 <span class="text-green-400 text-xs" id="bonus-mag"></span></span>
+                </div>
+            </div>
+
+            <button onclick="game.closeLevelUp()" class="w-full bg-gradient-to-r from-purple-600 to-purple-700 hover:from-purple-500 hover:to-purple-600 text-white py-3 rounded-lg transition-all font-bold text-lg shadow-lg">
+                Continue Adventure
+            </button>
+        </div>
+    </div>
+
+    <!-- Boss Warning Modal -->
+    <div id="boss-modal" class="hidden fixed inset-0 bg-red-900/20 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+        <div class="bg-gray-900 border border-red-600/50 rounded-2xl max-w-lg w-full p-6 shadow-2xl">
+            <div class="text-center mb-6">
+                <div class="inline-block p-3 bg-red-900/50 rounded-full mb-3 animate-pulse">
+                    <i data-lucide="skull" class="w-10 h-10 text-red-500"></i>
+                </div>
+                <h2 class="text-3xl font-bold text-red-400 fantasy-font">Boss Chamber</h2>
+                <p class="text-gray-400 mt-2">A powerful presence lurks ahead...</p>
+            </div>
+
+            <div class="bg-red-950/30 border border-red-900/50 rounded-lg p-4 mb-6">
+                <p class="text-red-200 text-center italic" id="boss-warning-text">
+                    You feel the air grow heavy. The ground trembles beneath your feet. This room contains a dangerous foe, but the exit is visible on the other side...
+                </p>
+            </div>
+
+            <div class="grid grid-cols-2 gap-4">
+                <button onclick="game.fightBoss()" class="bg-red-900/50 hover:bg-red-800/50 border border-red-600/50 text-red-200 py-4 px-6 rounded-lg transition-all font-bold flex flex-col items-center gap-2">
+                    <i data-lucide="sword" class="w-6 h-6"></i>
+                    Fight Boss
+                    <span class="text-xs font-normal text-red-400">High Risk, High Reward</span>
+                </button>
+                <button onclick="game.skipBoss()" class="bg-gray-800 hover:bg-gray-700 border border-gray-600 text-gray-300 py-4 px-6 rounded-lg transition-all font-bold flex flex-col items-center gap-2">
+                    <i data-lucide="footprints" class="w-6 h-6"></i>
+                    Sneak Past
+                    <span class="text-xs font-normal text-gray-500">Continue deeper</span>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Death Scoreboard Modal -->
+    <div id="death-modal" class="hidden fixed inset-0 bg-black/90 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+        <div class="bg-gray-900 border border-red-600/50 rounded-2xl max-w-md w-full p-8 shadow-2xl">
+            <div class="text-center mb-8">
+                <div class="inline-block p-4 bg-red-900/50 rounded-full mb-4 animate-pulse">
+                    <i data-lucide="skull-2" class="w-12 h-12 text-red-500"></i>
+                </div>
+                <h2 class="text-4xl font-bold text-red-400 fantasy-font mb-2">YOU HAVE FALLEN</h2>
+                <p class="text-gray-400 text-sm">Your adventure has come to an end...</p>
+            </div>
+
+            <div class="bg-gray-800/50 rounded-lg p-6 space-y-4 mb-8 border border-gray-700">
+                <div class="flex justify-between items-center pb-3 border-b border-gray-700">
+                    <span class="text-gray-400 flex items-center gap-2">
+                        <i data-lucide="layers" class="w-4 h-4 text-orange-400"></i>
+                        Deepest Depth
+                    </span>
+                    <span class="text-2xl font-bold text-orange-400" id="score-depth">-</span>
+                </div>
+
+                <div class="flex justify-between items-center pb-3 border-b border-gray-700">
+                    <span class="text-gray-400 flex items-center gap-2">
+                        <i data-lucide="sword" class="w-4 h-4 text-red-400"></i>
+                        Enemies Defeated
+                    </span>
+                    <span class="text-2xl font-bold text-red-400" id="score-kills">-</span>
+                </div>
+
+                <div class="flex justify-between items-center pb-3 border-b border-gray-700">
+                    <span class="text-gray-400 flex items-center gap-2">
+                        <i data-lucide="crown" class="w-4 h-4 text-purple-400"></i>
+                        Bosses Defeated
+                    </span>
+                    <span class="text-2xl font-bold text-purple-400" id="score-bosses">-</span>
+                </div>
+
+                <div class="flex justify-between items-center pb-3 border-b border-gray-700">
+                    <span class="text-gray-400 flex items-center gap-2">
+                        <i data-lucide="coins" class="w-4 h-4 text-yellow-400"></i>
+                        Gold Collected
+                    </span>
+                    <span class="text-2xl font-bold text-yellow-400" id="score-gold">-</span>
+                </div>
+
+                <div class="flex justify-between items-center">
+                    <span class="text-gray-400 flex items-center gap-2">
+                        <i data-lucide="trending-up" class="w-4 h-4 text-purple-400"></i>
+                        Final Level
+                    </span>
+                    <span class="text-2xl font-bold text-purple-400" id="score-level">-</span>
+                </div>
+            </div>
+
+            <button onclick="location.reload()" class="w-full bg-gradient-to-r from-red-600 to-red-700 hover:from-red-500 hover:to-red-600 text-white py-4 px-6 rounded-lg transition-all font-bold text-lg shadow-lg flex items-center justify-center gap-2">
+                <i data-lucide="refresh-cw" class="w-5 h-5"></i>
+                Start New Adventure
+            </button>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+    <script>
+        lucide.createIcons();
+    </script>
+</body>
+</html>
