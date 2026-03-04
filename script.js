@@ -95,9 +95,9 @@ class Player {
         this.defense += 2;
         this.magic += 2;
         
-        // Restore fully
-        this.hp = this.maxHp;
-        this.mp = this.maxMp;
+        // Restore 50% on level up
+        this.hp = Math.min(this.hp + Math.floor(this.maxHp * 0.50), this.maxHp);
+        this.mp = Math.min(this.mp + Math.floor(this.maxMp * 0.50), this.maxMp);
         
         // Bonus points tracking
         const bonuses = { hp: 0, mp: 0, atk: 0, def: 0, mag: 0 };
@@ -498,9 +498,9 @@ class Game {
             this.player.bossesKilled++;
         }
         
-        // Restore 25% HP and MP
-        const hpRestore = Math.floor(this.player.maxHp * 0.25);
-        const mpRestore = Math.floor(this.player.maxMp * 0.25);
+        // Restore 10% HP and MP after killing enemy
+        const hpRestore = Math.floor(this.player.maxHp * 0.10);
+        const mpRestore = Math.floor(this.player.maxMp * 0.10);
         this.player.heal(hpRestore);
         this.player.restoreMp(mpRestore);
         
@@ -1030,4 +1030,3 @@ class Game {
 
 // Initialize game
 const game = new Game();
-
