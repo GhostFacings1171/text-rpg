@@ -14,7 +14,7 @@ const ENEMY_TYPES = {
     },
     'Goblin': {
         resistances: {},
-        weaknesses: {}
+        weaknesses: { physical: 2}
     },
     'Orc': {
         resistances: { physical: 0.9 },
