@@ -9,11 +9,11 @@ const ENEMY_TYPES = {
         weaknesses: { physical: 1.4 }
     },
     'Slime': {
-        resistances: { physical: 0.6 },
+        resistances: { physical: 0.7 },
         weaknesses: { magic: 1.3 }
     },
     'Goblin': {
-        resistances: {},
+        resistances: { magic: 0.6},
         weaknesses: { physical: 2}
     },
     'Orc': {
@@ -89,11 +89,11 @@ class Player {
         this.xpToNext = Math.floor(this.xpToNext * 1.2) + 50;
         
         // Base +2 to all stats
-        this.maxHp += 2;
-        this.maxMp += 2;
-        this.attack += 2;
-        this.defense += 2;
-        this.magic += 2;
+        this.maxHp += 3;
+        this.maxMp += 3;
+        this.attack += 3;
+        this.defense += 3;
+        this.magic += 3;
         
         // Restore 50% on level up
         this.hp = Math.min(this.hp + Math.floor(this.maxHp * 0.50), this.maxHp);
@@ -103,7 +103,7 @@ class Player {
         const bonuses = { hp: 0, mp: 0, atk: 0, def: 0, mag: 0 };
         
         // Distribute 5 random bonus points
-        for (let i = 0; i < 5; i++) {
+        for (let i = 0; i < 6; i++) {
             const stats = ['hp', 'mp', 'atk', 'def', 'mag'];
             const chosen = stats[Math.floor(Math.random() * stats.length)];
             bonuses[chosen]++;
@@ -133,8 +133,8 @@ class Enemy {
         // Boss multiplier is 3x for significant challenge
         const bossMultiplier = isBoss ? 3 : 1;
         
-        // Variance for individual enemy differences (small range: 0.9 to 1.1)
-        const variance = () => Math.random() * 0.2 + 0.9;
+        // Variance for individual enemy differences (small range: 0.9 to 1.1) was 0.2 + 0.9
+        const variance = () => Math.random() * 0.2 + 1;
         
         // Scale enemies based on player level, not depth
         // This ensures enemies stay challenging but fair as player levels up
@@ -143,10 +143,10 @@ class Enemy {
         // Base stats scale with player level
         // Regular enemies: scale aggressively to maintain challenge throughout game
         // Increased multipliers to prevent power creep at mid-game
-        this.maxHp = Math.floor((30 + (levelScaling * 14)) * bossMultiplier * variance());
+        this.maxHp = Math.floor((30 + (levelScaling * 13)) * bossMultiplier * variance());
         this.hp = this.maxHp;
         this.attack = Math.floor((12 + (levelScaling * 3)) * bossMultiplier * variance());
-        this.defense = Math.floor((5 + (levelScaling * 1.3)) * bossMultiplier * variance());
+        this.defense = Math.floor((5 + (levelScaling * 1.2)) * bossMultiplier * variance());
         this.magic = Math.floor((7 + (levelScaling * 2.3)) * bossMultiplier * variance());
         
         // XP and gold reduced significantly for better balance
@@ -240,6 +240,11 @@ class Game {
         this.log("", 'normal');
         this.log("🎯 OBJECTIVE: Survive the dungeon, defeat enemies, and delve deeper to find the escape!", 'special');
         this.log("You stand at a crossroads. Which path will you take?", 'system');
+        this.log("DON'T TURN LEFT AT CROSSREADS!!!", 'special');
+        this.log("DON'T TURN LEFT AT CROSSREADS!!!", 'special');
+        this.log("DON'T TURN LEFT AT CROSSREADS!!!", 'special');
+        this.log("DON'T TURN LEFT AT CROSSREADS!!!", 'special');
+        this.log("DON'T TURN LEFT AT CROSSREADS!!!", 'special');
         
         // Start with path selection instead of auto-generating a room
         setTimeout(() => {
@@ -258,8 +263,8 @@ class Game {
         }
         
         let roomType;
-        if (roll < 0.30) roomType = 'enemy';
-        else if (roll < 0.45) roomType = 'chest';
+        if (roll < 0.40) roomType = 'enemy';
+        else if (roll < 0.40) roomType = 'chest';
         else if (roll < 0.55) roomType = 'shop';
         else roomType = 'empty';
         
@@ -514,8 +519,8 @@ class Game {
         if (isBoss) {
             this.log("🏆 Boss defeated! The dungeon trembles...", 'special');
             // Bonus for boss - reduced from 100 to 50
-            this.player.gold += 50;
-            this.log("Bonus: +50 Gold!", 'gold');
+            this.player.gold += 70;
+            this.log("Bonus: +70 Gold!", 'gold');
         }
         
         this.updateUI();
@@ -579,7 +584,7 @@ class Game {
         const hpPercent = (this.player.hp / this.player.maxHp) * 100;
         const mpPercent = (this.player.mp / this.player.maxMp) * 100;
         
-        if (hpPercent < 30 || mpPercent < 30) {
+        if (hpPercent < 35 || mpPercent < 35) {
             const restBtn = document.createElement('button');
             restBtn.className = 'col-span-2 bg-blue-900/50 hover:bg-blue-900/70 border border-blue-600/50 text-blue-200 py-3 px-4 rounded-lg transition-all btn-hover';
             restBtn.innerHTML = '<div class="font-bold">Rest & Restore</div><div class="text-xs text-blue-300 mt-1">Restore 100% HP & MP (Costs Gold)</div>';
@@ -608,21 +613,21 @@ class Game {
         const roll = Math.random();
         let reward;
         
-        if (roll < 0.6) {
+        if (roll < 0.75) {
             // Gold - significantly reduced
-            const amount = Math.floor(10 + Math.random() * 15 + (this.player.level * 2));
+            const amount = Math.floor(10 + Math.random() * 15 + (this.player.level * 3));
             this.player.gold += amount;
             reward = `Found ${amount} gold coins!`;
             this.log(`📦 ${reward}`, 'gold');
         } else if (roll < 0.85) {
             // Potion (instant heal)
-            const heal = Math.floor(this.player.maxHp * 0.4);
+            const heal = Math.floor(this.player.maxHp * 0.5);
             this.player.heal(heal);
             reward = `Found a health potion! Restored ${heal} HP.`;
             this.log(`📦 ${reward}`, 'heal');
         } else {
             // Rare item (stat boost)
-            const boost = Math.floor(Math.random() * 2) + 1; // Reduced from 3 to 2
+            const boost = Math.floor(Math.random() * 3) + 1; // Reduced from 3 to 2
             const stat = ['attack', 'defense', 'magic'][Math.floor(Math.random() * 3)];
             this.player[stat] += boost;
             const statName = stat.charAt(0).toUpperCase() + stat.slice(1);
