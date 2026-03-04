@@ -141,12 +141,13 @@ class Enemy {
         const levelScaling = playerLevel;
         
         // Base stats scale with player level
-        // Regular enemies: slightly stronger than player to provide challenge
-        this.maxHp = Math.floor((25 + (levelScaling * 10)) * bossMultiplier * variance());
+        // Regular enemies: scale aggressively to maintain challenge throughout game
+        // Increased multipliers to prevent power creep at mid-game
+        this.maxHp = Math.floor((30 + (levelScaling * 14)) * bossMultiplier * variance());
         this.hp = this.maxHp;
-        this.attack = Math.floor((10 + (levelScaling * 2.2)) * bossMultiplier * variance());
-        this.defense = Math.floor((4 + (levelScaling * 1)) * bossMultiplier * variance());
-        this.magic = Math.floor((6 + (levelScaling * 1.8)) * bossMultiplier * variance());
+        this.attack = Math.floor((12 + (levelScaling * 3)) * bossMultiplier * variance());
+        this.defense = Math.floor((5 + (levelScaling * 1.3)) * bossMultiplier * variance());
+        this.magic = Math.floor((7 + (levelScaling * 2.3)) * bossMultiplier * variance());
         
         // XP and gold reduced significantly for better balance
         // Gold is now much more limited to prevent overpowering
