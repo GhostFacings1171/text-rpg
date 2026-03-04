@@ -320,7 +320,7 @@ class Game {
                 this.enterShop();
                 break;
             case 'empty':
-                this.showExplorationChoices();
+                this.handleEmptyRoom();
                 break;
         }
     }
@@ -525,6 +525,29 @@ class Game {
         }, 1500);
     }
 
+    // Empty Room Handler
+    handleEmptyRoom() {
+        // Reward for empty room: small gold and 2% HP/MP restore
+        const goldReward = Math.floor(5 + Math.random() * 10);
+        const hpRestore = Math.floor(this.player.maxHp * 0.02);
+        const mpRestore = Math.floor(this.player.maxMp * 0.02);
+        
+        this.player.gold += goldReward;
+        this.player.heal(hpRestore);
+        this.player.restoreMp(mpRestore);
+        
+        this.log(`✨ You find some coins and rest a moment.`, 'normal');
+        this.log(`💰 Found ${goldReward} gold!`, 'gold');
+        this.log(`💚 Restored ${hpRestore} HP and ${mpRestore} MP!`, 'heal');
+        
+        this.state = 'exploring';
+        this.updateUI();
+        
+        setTimeout(() => {
+            this.showExplorationChoices();
+        }, 1500);
+    }
+
     // Exploration
     showExplorationChoices() {
         const paths = ['Left Door', 'Right Door', 'Forward Passage', 'Hidden Path'];
@@ -552,6 +575,18 @@ class Game {
             btn.onclick = () => this.generateRoom();
             buttonsDiv.appendChild(btn);
         });
+        
+        const hpPercent = (this.player.hp / this.player.maxHp) * 100;
+        const mpPercent = (this.player.mp / this.player.maxMp) * 100;
+        
+        if (hpPercent < 30 || mpPercent < 30) {
+            const restBtn = document.createElement('button');
+            restBtn.className = 'col-span-2 bg-blue-900/50 hover:bg-blue-900/70 border border-blue-600/50 text-blue-200 py-3 px-4 rounded-lg transition-all btn-hover';
+            restBtn.innerHTML = '<div class="font-bold">Rest & Restore</div><div class="text-xs text-blue-300 mt-1">Restore 100% HP & MP (Costs Gold)</div>';
+            restBtn.onclick = () => this.showRestMenu();
+            buttonsDiv.appendChild(restBtn);
+            lucide.createIcons();
+        }
     }
 
     // Chest System
@@ -944,6 +979,52 @@ class Game {
         
         this.log("💀 You have died... Your adventure ends here.", 'error');
         this.state = 'gameover';
+    }
+
+    showRestMenu() {
+        const restCost = Math.max(50, Math.floor(this.player.maxHp * 0.5));
+        
+        const buttonsDiv = document.getElementById('action-buttons');
+        buttonsDiv.innerHTML = '';
+        
+        const confirmBtn = document.createElement('button');
+        confirmBtn.className = 'bg-green-600 hover:bg-green-500 border border-green-500 text-white py-3 px-4 rounded-lg transition-all btn-hover';
+        confirmBtn.innerHTML = '<div class="font-bold">Confirm Rest (' + restCost + 'g)</div>';
+        confirmBtn.onclick = () => {
+            if (this.player.gold >= restCost) {
+                this.rest(restCost);
+            } else {
+                this.log("Not enough gold to rest!", 'error');
+            }
+        };
+        
+        const cancelBtn = document.createElement('button');
+        cancelBtn.className = 'bg-red-600 hover:bg-red-500 border border-red-500 text-white py-3 px-4 rounded-lg transition-all btn-hover';
+        cancelBtn.innerHTML = '<div class="font-bold">Cancel</div>';
+        cancelBtn.onclick = () => this.showExplorationChoices();
+        
+        buttonsDiv.appendChild(confirmBtn);
+        buttonsDiv.appendChild(cancelBtn);
+        
+        this.log('You find a safe place to rest. It will cost ' + restCost + ' gold to fully restore your HP and MP.', 'special');
+        lucide.createIcons();
+    }
+
+    rest(cost) {
+        this.player.gold -= cost;
+        this.player.hp = this.player.maxHp;
+        this.player.mp = this.player.maxMp;
+        
+        this.log('You rest and recover your strength...', 'heal');
+        this.log('HP fully restored!', 'heal');
+        this.log('MP fully restored!', 'heal');
+        this.log('Paid ' + cost + ' gold for rest.', 'gold');
+        
+        this.updateUI();
+        
+        setTimeout(() => {
+            this.showExplorationChoices();
+        }, 1500);
     }
 }
 
