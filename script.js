@@ -375,13 +375,13 @@ class Game {
         const damageType = isMagic ? 'magic' : 'physical';
         
         if (isMagic) {
-            const mpCost = Math.floor(this.player.maxMp * 0.15);
+            const mpCost = Math.floor(this.player.maxMp * 0.25);
             if (this.player.mp < mpCost) {
                 this.log("Not enough MP!", 'error');
                 return;
             }
             this.player.mp -= mpCost;
-            damage = Math.floor(this.player.magic * 2.5) + Math.floor(Math.random() * 10);
+            damage = Math.floor(this.player.magic * 1.6) + Math.floor(Math.random() * 5);
             message = `You cast a spell dealing ${damage} magic damage!`;
         } else {
             damage = this.player.attack + Math.floor(Math.random() * 5);
