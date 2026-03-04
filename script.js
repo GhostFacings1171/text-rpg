@@ -1030,3 +1030,4 @@ class Game {
 
 // Initialize game
 const game = new Game();
+
